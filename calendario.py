@@ -2525,6 +2525,39 @@ def rrule_de(act):
     return "RRULE:" + ";".join(partes)
 
 
+def _escapar_ics(texto):
+    """Prepara un texto para meterlo en un campo de .ics (RFC 5545).
+
+    Sin esto, una actividad llamada "Reunión con Ana, Luis y Pedro"
+    llegaba cortada a Google Calendar (la coma separa valores) y un
+    detalle escrito en dos líneas rompía el archivo completo, porque el
+    salto de línea real se leía como el comienzo de otra propiedad.
+    """
+    return (str(texto or "")
+            .replace("\\", "\\\\")
+            .replace(";", "\\;")
+            .replace(",", "\\,")
+            .replace("\r\n", "\\n")
+            .replace("\n", "\\n")
+            .replace("\r", "\\n"))
+
+
+def _desescapar_ics(texto):
+    """Inversa de _escapar_ics, para leer archivos de otros calendarios."""
+    salida = []
+    i = 0
+    texto = str(texto or "")
+    while i < len(texto):
+        if texto[i] == "\\" and i + 1 < len(texto):
+            siguiente = texto[i + 1]
+            salida.append({"n": "\n", "N": "\n"}.get(siguiente, siguiente))
+            i += 2
+        else:
+            salida.append(texto[i])
+            i += 1
+    return "".join(salida)
+
+
 def recurrencia_de_rrule(linea):
     """Convierte un RRULE de un .ics al formato interno. None si no aplica."""
     if not linea:
@@ -5208,20 +5241,28 @@ class MainWindow(QMainWindow):
             for ex in excepciones:
                 try:
                     dt_ex = parse_fecha(ex)
+                    # La hora DEBE ser la misma que la de la serie: un
+                    # EXDATE a medianoche no coincide con una ocurrencia
+                    # de las 07:00, y Google y Samsung lo descartan sin
+                    # avisar, así que el día excluido reaparecía.
+                    dt_ex = dt_ex.replace(hour=dt_inicio.hour, minute=dt_inicio.minute)
                     lineas.append(f"EXDATE:{dt_ex.strftime('%Y%m%dT%H%M%S')}")
                 except ValueError:
                     pass
             lineas += [
-                f"SUMMARY:{act['texto']}",
-                f"LOCATION:{act.get('ubicacion', '')}",
-                f"DESCRIPTION:{act.get('detalles', '')}",
+                f"SUMMARY:{_escapar_ics(act['texto'])}",
+                f"LOCATION:{_escapar_ics(act.get('ubicacion', ''))}",
+                f"DESCRIPTION:{_escapar_ics(act.get('detalles', ''))}",
                 f"PRIORITY:{ {'Alta': 1, 'Media': 5, 'Baja': 9}.get(act.get('prioridad', 'Media'), 5) }",
                 "END:VEVENT",
             ]
         lineas.append("END:VCALENDAR")
         try:
-            with open(ruta, "w", encoding="utf-8") as f:
-                f.write("\n".join(lineas))
+            with open(ruta, "w", encoding="utf-8", newline="") as f:
+                # CRLF y no LF: lo exige el RFC 5545, y algunos
+                # calendarios (Outlook entre ellos) rechazan el archivo
+                # entero si las líneas terminan solo en \n.
+                f.write("\r\n".join(lineas) + "\r\n")
             self.status_bar.showMessage(f"Exportado a {ruta}")
         except Exception as e:
             QMessageBox.warning(self, "Error al exportar", str(e))
@@ -5237,12 +5278,21 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Error al importar", str(e))
             return
 
+        # Los calendarios grandes (Google, Outlook, Samsung) parten las
+        # líneas largas y continúan en la siguiente con un espacio o una
+        # tabulación delante. Hay que volver a unirlas antes de leer nada
+        # o los títulos llegan cortados por la mitad.
+        contenido = re.sub(r"\r?\n[ \t]", "", contenido)
+
         eventos = re.findall(r"BEGIN:VEVENT(.*?)END:VEVENT", contenido, re.DOTALL)
         importados = 0
         for bloque in eventos:
             def campo(nombre):
-                m = re.search(rf"{nombre}:(.*)", bloque)
-                return m.group(1).strip() if m else ""
+                # El nombre puede venir con parámetros antes de los dos
+                # puntos (DTSTART;TZID=America/Santiago:...), así que se
+                # permiten y se descartan.
+                m = re.search(rf"^{nombre}[^:\r\n]*:(.*)$", bloque, re.MULTILINE)
+                return _desescapar_ics(m.group(1).strip()) if m else ""
 
             resumen = campo("SUMMARY") or "Actividad importada"
             dtstart = campo("DTSTART")
