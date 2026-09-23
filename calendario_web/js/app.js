@@ -844,6 +844,7 @@ function conectarEventos() {
     almacen.guardarDiferido();
   };
   $("#op-categoria").onclick = () => {
+    $("#dlg-menu").close();
     const nombre = prompt("Nombre de la categoría nueva:");
     if (!nombre || !nombre.trim()) return;
     const color = prompt("Color en formato #RRGGBB:", "#3498DB") || "#3498DB";
@@ -852,17 +853,26 @@ function conectarEventos() {
     llenarSelect($("#nueva-categoria"), Object.keys(almacen.categorias), nombre.trim());
     avisar(`Categoría «${nombre.trim()}» creada`);
   };
-  $("#op-notificaciones").onclick = pedirNotificaciones;
-  $("#op-exportar-ics").onclick = () => {
+  // Todo lo que abre una ventana del sistema (elegir archivo, guardar,
+  // pedir permiso de notificaciones) cierra antes el menú. Si no, el menú
+  // se queda flotando por encima y la ventana del explorador aparece
+  // detrás de la aplicación: parece que el botón no hizo nada.
+  const cerrandoMenu = (accion) => () => {
+    $("#dlg-menu").close();
+    accion();
+  };
+
+  $("#op-notificaciones").onclick = cerrandoMenu(pedirNotificaciones);
+  $("#op-exportar-ics").onclick = cerrandoMenu(() => {
     descargar("calendario.ics", exportarICS(almacen.actividades), "text/calendar");
     avisar("Archivo .ics generado");
-  };
-  $("#op-importar-ics").onclick = () => pedirArchivo("ics");
-  $("#op-exportar-json").onclick = () => {
+  });
+  $("#op-importar-ics").onclick = cerrandoMenu(() => pedirArchivo("ics"));
+  $("#op-exportar-json").onclick = cerrandoMenu(() => {
     descargar("datos.json", almacen.exportarJSON(), "application/json");
     avisar("Respaldo generado");
-  };
-  $("#op-importar-json").onclick = () => pedirArchivo("json");
+  });
+  $("#op-importar-json").onclick = cerrandoMenu(() => pedirArchivo("json"));
   $("#op-sync").onclick = () => { $("#dlg-menu").close(); mostrarSync(); };
   $("#sync-cerrar").onclick = () => $("#dlg-sync").close();
   $("#archivo-oculto").onchange = archivoElegido;

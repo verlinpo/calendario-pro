@@ -52,8 +52,13 @@ self.addEventListener("fetch", (evento) => {
   const url = new URL(peticion.url);
   if (url.origin !== self.location.origin) return;   // no tocar Firebase ni CDNs
 
+  // cache: "no-cache" NO significa "no guardes": significa "pregúntale
+  // siempre al servidor si cambió". El servidor responde 304 y no
+  // reenvía nada cuando no hay novedades, así que es igual de rápido,
+  // pero garantiza que una versión nueva publicada en GitHub Pages
+  // llegue al navegador en vez de quedarse con la copia vieja guardada.
   evento.respondWith(
-    fetch(peticion)
+    fetch(peticion, { cache: "no-cache" })
       .then((respuesta) => {
         if (respuesta && respuesta.status === 200 && respuesta.type === "basic") {
           const copia = respuesta.clone();
