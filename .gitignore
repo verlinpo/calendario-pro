@@ -1,0 +1,29 @@
+# Entorno virtual: son miles de archivos y se reinstala con pip.
+# (el de esta carpeta además apunta a un Python 3.8 que ya no existe)
+.venv/
+venv/
+env/
+
+# Configuración local de PyCharm
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Respaldos automáticos
+*.bak
+*.bak-*
+calendario.py.bak-*
+
+# Datos personales: el calendario real vive en ~/.calendario_pro,
+# no en el repositorio. Por si acaso se copia aquí alguna vez:
+datos.json
+datos_dañado_*.json
+calendario.log
+
+# Salidas generadas
+gráficos guardados/
+*.png.tmp

@@ -1,0 +1,292 @@
+/* Calendario Pro — misma identidad visual que la versión de escritorio.
+   Diseñado primero para el celular y ensanchado en pantallas grandes. */
+
+:root {
+  --acento: #6C8CFF;
+  --hoy: #D9A441;
+  --fondo: #0F1115;
+  --panel: #161920;
+  --celda: #1C2028;
+  --elevado: #232833;
+  --texto: #E8EAF0;
+  --tenue: #7C879B;
+  --borde: #252A34;
+  --borde-suave: #1E222B;
+  --campo: #12151B;
+  --radio: 12px;
+  --ui: "Segoe UI Variable Text", "Segoe UI", Inter, "SF Pro Text", system-ui, sans-serif;
+  --display: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", Inter, system-ui, sans-serif;
+}
+
+html[data-tema="claro"] {
+  --fondo: #F4F5F7;
+  --panel: #FFFFFF;
+  --celda: #FAFAFC;
+  --elevado: #FFFFFF;
+  --texto: #171A20;
+  --tenue: #6B7280;
+  --borde: #E2E5EA;
+  --borde-suave: #EDEFF3;
+  --campo: #FFFFFF;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--ui);
+  font-size: 14px;
+  background: var(--fondo);
+  color: var(--texto);
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: contain;
+}
+
+.oculto { display: none !important; }
+.crece { flex: 1; }
+.tenue { color: var(--tenue); }
+.mini { font-size: 12px; }
+
+/* ---------- Barra superior ---------- */
+.barra {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--fondo);
+  padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+.barra-fila { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.barra-fila:last-child { margin-bottom: 0; }
+
+h1 {
+  font-family: var(--display);
+  font-size: 19px; font-weight: 600; margin: 0;
+}
+h2 { font-family: var(--display); font-size: 16px; font-weight: 600; margin: 0 0 10px; }
+h3 { font-family: var(--display); font-size: 16px; margin: 0 0 12px; }
+
+button {
+  font-family: inherit; font-size: 14px; color: var(--texto);
+  background: transparent; border: 1px solid var(--borde);
+  border-radius: 8px; padding: 7px 12px; cursor: pointer;
+  min-height: 38px;               /* objetivo táctil cómodo */
+}
+button:hover { background: var(--elevado); }
+button:active { transform: scale(0.98); }
+button.primario { background: var(--acento); color: #0F1115; border: none; font-weight: 600; }
+button.primario:hover { background: #7F9CFF; }
+button.tenue { color: var(--tenue); border-color: transparent; }
+button.nav, button.icono { border: none; color: var(--tenue); font-size: 18px; padding: 4px 10px; }
+button.nav:hover, button.icono:hover { color: var(--texto); background: var(--elevado); }
+
+.segmentado {
+  display: flex; gap: 2px; padding: 3px;
+  background: var(--celda); border: 1px solid var(--borde-suave); border-radius: 9px;
+}
+.segmentado button {
+  border: none; border-radius: 7px; padding: 6px 14px;
+  color: var(--tenue); font-weight: 500; min-height: 34px;
+}
+.segmentado button.activo { background: var(--elevado); color: var(--texto); font-weight: 600; }
+
+input, select, textarea {
+  font-family: inherit; font-size: 14px;
+  background: var(--campo); color: var(--texto);
+  border: 1px solid var(--borde); border-radius: 8px; padding: 8px 10px;
+  width: 100%; min-height: 38px;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--acento); }
+#buscar { max-width: 210px; }
+
+.estado { font-size: 11px; color: var(--tenue); white-space: nowrap; }
+.estado.error { color: #E0625E; }
+.estado.ok { color: #4FB477; }
+
+/* ---------- Estructura ---------- */
+main {
+  display: grid; gap: 12px; padding: 12px;
+  grid-template-columns: 1fr;
+  padding-bottom: 84px;            /* espacio para la barra inferior */
+}
+.panel {
+  background: var(--panel); border: 1px solid var(--borde);
+  border-radius: var(--radio); padding: 14px;
+}
+.separador { height: 1px; background: var(--borde); margin: 12px 0; }
+.seccion-titulo {
+  font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--tenue); margin-bottom: 6px;
+}
+
+/* ---------- Vista mes ---------- */
+.cabeceras-dias, .grilla-mes { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cabeceras-dias div {
+  text-align: center; font-size: 11px; font-weight: 600;
+  letter-spacing: 1px; color: var(--tenue); padding-bottom: 6px;
+}
+.celda {
+  background: var(--celda); border: 1px solid var(--borde-suave); border-radius: 8px;
+  min-height: 62px; padding: 6px; cursor: pointer;
+  display: flex; flex-direction: column; gap: 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+.celda:hover { background: var(--elevado); border-color: var(--borde); }
+.celda.vacia { background: transparent; border-color: transparent; cursor: default; }
+.celda.seleccionado { border-color: var(--acento); background: var(--elevado); }
+.celda.soltando { border-style: dashed; border-color: var(--acento); }
+.celda .fila-num { display: flex; align-items: center; gap: 4px; }
+.celda .num { font-size: 13px; font-weight: 500; }
+.celda.hoy .num { color: var(--hoy); font-size: 14px; font-weight: 700; }
+.celda .conteo { margin-left: auto; font-size: 11px; color: var(--tenue); }
+.celda .puntos { display: flex; gap: 3px; margin-top: auto; flex-wrap: wrap; }
+.celda .puntos i { width: 6px; height: 6px; border-radius: 3px; display: block; }
+
+/* ---------- Vista semana ---------- */
+.grilla-semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.col-semana {
+  background: var(--celda); border: 1px solid var(--borde-suave);
+  border-radius: 10px; padding: 5px; min-height: 180px; cursor: pointer;
+}
+.col-semana.seleccionado { border-color: var(--acento); background: var(--elevado); }
+.col-semana .cab { text-align: center; font-size: 12px; margin-bottom: 5px; }
+.col-semana.hoy .cab { color: var(--hoy); font-weight: 700; }
+.chip {
+  background: var(--elevado); border-left: 3px solid var(--acento);
+  border-radius: 5px; padding: 4px 6px; margin-bottom: 3px; font-size: 11px;
+  cursor: pointer; word-break: break-word;
+}
+.chip .hora { color: var(--tenue); display: block; font-size: 10px; }
+
+/* ---------- Vista día ---------- */
+.grilla-dia { position: relative; }
+.franja { display: flex; border-top: 1px solid var(--borde-suave); min-height: 46px; }
+.franja .hora { width: 52px; flex: none; font-size: 11px; color: var(--tenue); padding-top: 2px; }
+.franja .contenido { flex: 1; padding: 2px 0 2px 6px; display: flex; flex-direction: column; gap: 3px; }
+.bloque {
+  border-left: 3px solid var(--acento); border-radius: 6px;
+  padding: 5px 8px; cursor: pointer; background: var(--celda);
+}
+.bloque .titulo { font-size: 12px; font-weight: 600; }
+.bloque .detalle { font-size: 10px; color: var(--tenue); }
+.sin-hora { margin-bottom: 10px; }
+
+/* ---------- Agenda y tarjetas ---------- */
+.cab-fecha {
+  color: var(--acento); font-weight: 600; font-size: 13px;
+  margin: 14px 0 6px; font-family: var(--display);
+}
+.tarjeta {
+  display: flex; align-items: flex-start; gap: 9px;
+  background: var(--celda); border: 1px solid var(--borde-suave);
+  border-left: 3px solid var(--acento); border-radius: 9px;
+  padding: 9px 10px; margin-bottom: 7px;
+}
+.tarjeta.seleccionada { border-color: var(--acento); }
+.tarjeta input[type="checkbox"] { width: 18px; height: 18px; min-height: 0; flex: none; margin-top: 2px; accent-color: var(--acento); }
+.tarjeta .cuerpo { flex: 1; min-width: 0; }
+.tarjeta .titulo { font-size: 13px; font-weight: 600; word-break: break-word; }
+.tarjeta.hecha .titulo { color: var(--tenue); text-decoration: line-through; font-weight: 500; }
+.tarjeta .meta { font-size: 11px; color: var(--tenue); margin-top: 2px; }
+.tarjeta .botones { display: flex; gap: 2px; flex: none; }
+.tarjeta .botones button { border: none; color: var(--tenue); font-size: 11px; padding: 5px 7px; min-height: 32px; }
+.punto-cat { width: 7px; height: 7px; border-radius: 4px; display: inline-block; margin-right: 5px; }
+.vacio { color: var(--tenue); text-align: center; padding: 28px 10px; }
+
+.lista-dia { min-height: 60px; }
+
+/* ---------- Leyenda y progreso ---------- */
+.leyenda {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--borde);
+  font-size: 12px; color: var(--tenue);
+}
+.leyenda span { display: flex; align-items: center; gap: 5px; }
+.leyenda .punto { width: 8px; height: 8px; border-radius: 4px; display: block; }
+.leyenda .cuadro { width: 8px; height: 8px; border-radius: 2px; background: var(--acento); display: block; }
+
+.progreso { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--borde); }
+.barra-xp { height: 6px; background: var(--celda); border-radius: 3px; overflow: hidden; margin: 6px 0 4px; }
+#xp-relleno { height: 100%; background: var(--acento); border-radius: 3px; transition: width .25s; }
+
+.fila { display: flex; align-items: center; gap: 8px; }
+.fila .guion { color: var(--tenue); }
+form#form-rapido { display: flex; flex-direction: column; gap: 7px; }
+
+/* ---------- Barra inferior (celular) ---------- */
+.barra-inferior {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: flex; gap: 4px; align-items: center;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  background: var(--panel); border-top: 1px solid var(--borde);
+}
+.barra-inferior button {
+  flex: 1; border: none; color: var(--tenue); font-size: 12px; padding: 8px 2px; min-height: 44px;
+}
+.barra-inferior button.activo { color: var(--texto); font-weight: 600; background: var(--elevado); }
+.barra-inferior button.destacado {
+  flex: none; width: 48px; background: var(--acento); color: #0F1115; font-size: 22px; font-weight: 600;
+}
+
+/* ---------- Diálogos ---------- */
+dialog {
+  background: var(--panel); color: var(--texto);
+  border: 1px solid var(--borde); border-radius: 14px;
+  padding: 18px; width: min(460px, calc(100vw - 24px)); max-height: 88vh;
+}
+dialog::backdrop { background: rgba(0, 0, 0, .55); }
+dialog form { display: flex; flex-direction: column; gap: 9px; }
+dialog label { display: block; font-size: 12px; color: var(--tenue); }
+dialog label input, dialog label select, dialog label textarea { margin-top: 3px; }
+fieldset { border: 1px solid var(--borde); border-radius: 10px; padding: 10px; margin: 0; }
+legend { font-size: 12px; color: var(--tenue); padding: 0 5px; }
+.acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+.acciones.columna { flex-direction: column; }
+.acciones.columna button { width: 100%; }
+.dias-semana { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 4px; }
+.dias-semana button {
+  flex: 1; min-width: 40px; padding: 6px 0; font-size: 11px;
+  color: var(--tenue); border-radius: 6px;
+}
+.dias-semana button.activo { background: var(--acento); border-color: var(--acento); color: #0F1115; font-weight: 600; }
+
+.aviso {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 60;
+  background: var(--elevado); border: 1px solid var(--borde); border-radius: 9px;
+  padding: 10px 16px; font-size: 13px; max-width: calc(100vw - 32px);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .35);
+}
+
+/* ---------- Pantallas grandes ---------- */
+@media (min-width: 900px) {
+  main {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    padding: 14px; padding-bottom: 14px;
+    align-items: start;
+  }
+  .barra-inferior { display: none; }
+  .celda { min-height: 84px; padding: 8px; }
+  .col-semana { min-height: 320px; }
+}
+
+@media (max-width: 899px) {
+  /* En el celular el panel lateral va debajo. El selector de vistas de
+     arriba se oculta: la barra inferior ya cumple esa función y tenerlo
+     dos veces solo quitaba ancho al buscador. */
+  .lateral { order: 2; }
+  #selector-vistas { display: none; }
+  #form-rapido.oculto-movil { display: none; }
+  .cabeceras-dias div { font-size: 10px; letter-spacing: 0; }
+  .celda { min-height: 54px; padding: 4px; border-radius: 6px; }
+  .celda .num { font-size: 12px; }
+  .grilla-semana { grid-template-columns: 1fr; }
+  .col-semana { min-height: 0; }
+  .col-semana .cab { text-align: left; font-weight: 600; }
+  #buscar { max-width: none; flex: 1; }
+  h1 { font-size: 17px; }
+  /* La vista semana en vertical se lee como una lista de días */
+  .col-semana .cab { border-bottom: 1px solid var(--borde-suave); padding-bottom: 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+  button:active { transform: none; }
+}

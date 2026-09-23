@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#6C8CFF"/>
+  <path d="M0 112A112 112 0 0 1 112 0h288a112 112 0 0 1 112 112v30H0z" fill="#465FBE"/>
+  <circle cx="174" cy="66" r="18" fill="#0F1115"/>
+  <circle cx="338" cy="66" r="18" fill="#0F1115"/>
+  <text x="256" y="380" font-family="Segoe UI, Arial, sans-serif" font-size="248"
+        font-weight="700" fill="#0F1115" text-anchor="middle">13</text>
+</svg>

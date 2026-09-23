@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Verificación del motor de repeticiones</title>
+<style>
+  body { font: 14px/1.5 "Segoe UI", system-ui, sans-serif; background: #0f1115; color: #e8eaf0;
+         margin: 0; padding: 24px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #7c879b; margin-bottom: 20px; }
+  .bloque { background: #161920; border: 1px solid #252a34; border-radius: 10px;
+            padding: 14px 16px; margin-bottom: 12px; }
+  .ok { color: #4fb477; } .mal { color: #e0625e; }
+  .grande { font-size: 26px; font-weight: 700; }
+  pre { background: #12151b; padding: 10px; border-radius: 8px; overflow-x: auto;
+        font-size: 12px; color: #c8cede; max-height: 340px; }
+  td { padding: 2px 14px 2px 0; } .num { text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<h1>Verificación del motor de repeticiones</h1>
+<div class="sub">Compara <code>js/recurrencia.js</code> contra el resultado de
+<code>calendario.py</code> (corpus generado por <code>generar_corpus.py</code>).</div>
+<div id="salida" class="bloque">Cargando corpus…</div>
+
+<script type="module">
+import * as R from "../js/recurrencia.js";
+
+const salida = document.getElementById("salida");
+const esc = (s) => String(s).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+
+function hashFnv1a(texto) {
+  let h = 0x811C9DC5;
+  for (let i = 0; i < texto.length; i++) {
+    h ^= texto.charCodeAt(i) & 0xFF;
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
+
+const corpus = await (await fetch("corpus.json")).json();
+const fallos = [];
+let t0 = performance.now();
+
+// ---- 1. ocurrencias ----
+let okOcu = 0;
+for (const caso of corpus.ocurrencias) {
+  const fechas = R.ocurrenciasTexto(caso.act, caso.desde, caso.hasta);
+  const h = hashFnv1a(fechas.join("|"));
+  if (fechas.length === caso.n && h === caso.hash) { okOcu++; continue; }
+  if (fallos.length < 20) {
+    fallos.push({
+      tipo: "ocurrencias",
+      caso: JSON.stringify(caso.act) + ` [${caso.desde}..${caso.hasta}]`,
+      python: `n=${caso.n} primeras=${caso.primeras.join(",")} ultimas=${caso.ultimas.join(",")}`,
+      js: `n=${fechas.length} primeras=${fechas.slice(0, 3).join(",")} ultimas=${fechas.slice(-3).join(",")}`,
+    });
+  }
+}
+const msOcu = performance.now() - t0;
+
+// ---- 2. parse_fecha ----
+let okFecha = 0;
+for (const c of corpus.parse_fecha) {
+  const d = R.parseFecha(c.txt);
+  const ok = c.ok ? (d !== null && R.fechaTexto(d) === c.ida_y_vuelta) : d === null;
+  if (ok) okFecha++;
+  else fallos.push({
+    tipo: "parseFecha", caso: JSON.stringify(c.txt),
+    python: c.ok ? `valida -> ${c.ida_y_vuelta}` : "rechazada",
+    js: d === null ? "rechazada" : `valida -> ${R.fechaTexto(d)}`,
+  });
+}
+
+// ---- 3. RRULE (ida y vuelta) ----
+let okRrule = 0;
+for (const c of corpus.rrule) {
+  const act = { fecha: c.fecha, recurrencia: c.rec };
+  const linea = R.rruleDe(act);
+  const vuelta = linea ? R.recurrenciaDeRrule(linea) : null;
+  const mismoTexto = R.textoRecurrencia(act) === c.texto;
+  const mismaLinea = (linea || null) === (c.rrule || null);
+  const mismaVuelta = JSON.stringify(vuelta) === JSON.stringify(c.vuelta ?? null);
+  if (mismaLinea && mismaVuelta && mismoTexto) { okRrule++; continue; }
+  if (fallos.length < 30) {
+    fallos.push({
+      tipo: "rrule", caso: JSON.stringify(c.rec),
+      python: `${c.rrule} | vuelta=${JSON.stringify(c.vuelta)} | "${c.texto}"`,
+      js: `${linea} | vuelta=${JSON.stringify(vuelta)} | "${R.textoRecurrencia(act)}"`,
+    });
+  }
+}
+
+// ---- 4. Cambio de horario: 365 días seguidos sin saltos ni repeticiones ----
+let okDst = true, detalleDst = "";
+{
+  const serie = { fecha: "01/01/2026", recurrencia: { tipo: "diaria", intervalo: 1, fin: "nunca" } };
+  const f = R.ocurrenciasTexto(serie, "01/01/2026", "31/12/2026");
+  const unicas = new Set(f);
+  if (f.length !== 365 || unicas.size !== 365) {
+    okDst = false;
+    detalleDst = `esperados 365 días distintos, salieron ${f.length} (${unicas.size} únicos)`;
+  } else {
+    detalleDst = "365 días consecutivos, sin duplicados ni saltos (abril y septiembre incluidos)";
+  }
+}
+
+const totalFallos = fallos.length;
+const totalCasos = corpus.ocurrencias.length + corpus.parse_fecha.length + corpus.rrule.length + 1;
+
+salida.innerHTML = `
+  <div class="grande ${totalFallos ? "mal" : "ok"}">
+    ${totalFallos ? totalFallos + " DIFERENCIAS" : "TODO COINCIDE"}
+  </div>
+  <table>
+    <tr><td>ocurrencias()</td><td class="num">${okOcu} / ${corpus.ocurrencias.length}</td>
+        <td class="${okOcu === corpus.ocurrencias.length ? "ok" : "mal"}">
+        ${okOcu === corpus.ocurrencias.length ? "idéntico a Python" : "hay diferencias"}</td>
+        <td class="num">${msOcu.toFixed(0)} ms</td></tr>
+    <tr><td>parseFecha()</td><td class="num">${okFecha} / ${corpus.parse_fecha.length}</td>
+        <td class="${okFecha === corpus.parse_fecha.length ? "ok" : "mal"}">
+        ${okFecha === corpus.parse_fecha.length ? "idéntico a Python" : "hay diferencias"}</td><td></td></tr>
+    <tr><td>RRULE ida y vuelta</td><td class="num">${okRrule} / ${corpus.rrule.length}</td>
+        <td class="${okRrule === corpus.rrule.length ? "ok" : "mal"}">
+        ${okRrule === corpus.rrule.length ? "idéntico a Python" : "hay diferencias"}</td><td></td></tr>
+    <tr><td>cambio de horario</td><td class="num">${okDst ? "1 / 1" : "0 / 1"}</td>
+        <td class="${okDst ? "ok" : "mal"}">${esc(detalleDst)}</td><td></td></tr>
+  </table>
+  <p class="sub">${totalCasos.toLocaleString("es")} comprobaciones en total.</p>
+  ${totalFallos ? "<pre>" + fallos.map((f) =>
+      `[${f.tipo}] ${esc(f.caso)}\n   python: ${esc(f.python)}\n   js    : ${esc(f.js)}`
+    ).join("\n\n") + "</pre>" : ""}
+`;
+document.title = totalFallos ? `${totalFallos} diferencias` : "Todo coincide";
+</script>
+</body>
+</html>

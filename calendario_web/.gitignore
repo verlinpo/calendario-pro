@@ -1,0 +1,9 @@
+# El corpus de verificación pesa varios MB y se regenera cuando haga falta:
+#   python calendario_web/pruebas/generar_corpus.py
+pruebas/corpus.json
+
+# Copias temporales de datos personales que se usen para probar
+pruebas/_datos_*.json
+
+__pycache__/
+*.pyc

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F1115">
+<meta name="description" content="Calendario Pro — agenda personal con actividades que se repiten.">
+<title>Calendario Pro</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="iconos/icono.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="iconos/icono-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Calendario">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<header class="barra">
+  <div class="barra-fila">
+    <div class="segmentado" id="selector-vistas">
+      <button data-vista="dia">Día</button>
+      <button data-vista="semana">Semana</button>
+      <button data-vista="mes" class="activo">Mes</button>
+      <button data-vista="agenda">Agenda</button>
+    </div>
+    <div class="crece"></div>
+    <input type="search" id="buscar" placeholder="Buscar actividades" autocomplete="off">
+    <button id="btn-menu" class="icono" title="Más opciones" aria-haspopup="true">⋯</button>
+  </div>
+  <div class="barra-fila">
+    <h1 id="periodo">—</h1>
+    <div class="crece"></div>
+    <span id="estado-sync" class="estado" title="Estado de la sincronización"></span>
+    <button id="btn-hoy">Hoy</button>
+    <button id="btn-anterior" class="nav" aria-label="Anterior">‹</button>
+    <button id="btn-siguiente" class="nav" aria-label="Siguiente">›</button>
+  </div>
+</header>
+
+<main>
+  <section class="panel calendario">
+    <div id="vista-mes" class="vista">
+      <div class="cabeceras-dias" id="cabeceras-dias"></div>
+      <div class="grilla-mes" id="grilla-mes"></div>
+    </div>
+    <div id="vista-semana" class="vista oculto"><div class="grilla-semana" id="grilla-semana"></div></div>
+    <div id="vista-dia" class="vista oculto"><div class="grilla-dia" id="grilla-dia"></div></div>
+    <div id="vista-agenda" class="vista oculto"><div id="lista-agenda"></div></div>
+
+    <div class="leyenda">
+      <span><i class="punto" style="background:#D9A441"></i>Hoy</span>
+      <span><i class="cuadro"></i>Seleccionado</span>
+      <div class="crece"></div>
+      <span><i class="punto" style="background:#E0625E"></i>Alta</span>
+      <span><i class="punto" style="background:#D9A441"></i>Media</span>
+      <span><i class="punto" style="background:#4FB477"></i>Baja</span>
+    </div>
+  </section>
+
+  <aside class="panel lateral">
+    <div class="seccion-titulo">DÍA SELECCIONADO</div>
+    <h2 id="titulo-dia">—</h2>
+
+    <form id="form-rapido" autocomplete="off">
+      <div class="seccion-titulo">NUEVA ACTIVIDAD</div>
+      <input id="nueva-texto" placeholder="¿Qué tienes que hacer?" required>
+      <div class="fila">
+        <input id="nueva-inicio" type="time" aria-label="Hora de inicio">
+        <span class="guion">–</span>
+        <input id="nueva-fin" type="time" aria-label="Hora de término">
+      </div>
+      <div class="fila">
+        <select id="nueva-categoria" aria-label="Categoría"></select>
+        <select id="nueva-prioridad" aria-label="Prioridad">
+          <option>Alta</option><option selected>Media</option><option>Baja</option>
+        </select>
+      </div>
+      <select id="nueva-repeticion" aria-label="Repetición"></select>
+      <button type="submit" class="primario">Agregar actividad</button>
+    </form>
+
+    <div class="separador"></div>
+    <div id="lista-dia" class="lista-dia"></div>
+
+    <div class="progreso">
+      <div class="fila">
+        <strong id="nivel">Nivel 1</strong>
+        <div class="crece"></div>
+        <span id="racha" class="tenue">Racha de 0 días</span>
+      </div>
+      <div class="barra-xp"><div id="xp-relleno"></div></div>
+      <div id="xp-texto" class="tenue mini">0/100 XP</div>
+    </div>
+  </aside>
+</main>
+
+<!-- Barra inferior, solo en pantallas de celular -->
+<nav class="barra-inferior" id="barra-inferior">
+  <button data-vista="dia">Día</button>
+  <button data-vista="semana">Semana</button>
+  <button data-vista="mes" class="activo">Mes</button>
+  <button data-vista="agenda">Agenda</button>
+  <button id="btn-nueva-movil" class="destacado" aria-label="Nueva actividad">+</button>
+</nav>
+
+<!-- ---------- Diálogos ---------- -->
+<dialog id="dlg-editar">
+  <form method="dialog" id="form-editar">
+    <h3 id="titulo-editar">Editar actividad</h3>
+    <label>Actividad <input id="ed-texto" required></label>
+    <div class="fila">
+      <label class="crece">Inicio <input id="ed-inicio" type="time"></label>
+      <label class="crece">Término <input id="ed-fin" type="time"></label>
+    </div>
+    <label>Ubicación <input id="ed-ubicacion"></label>
+    <div class="fila">
+      <label class="crece">Categoría <select id="ed-categoria"></select></label>
+      <label class="crece">Prioridad <select id="ed-prioridad">
+        <option>Alta</option><option>Media</option><option>Baja</option></select></label>
+    </div>
+
+    <fieldset id="bloque-repeticion">
+      <legend>Repetición</legend>
+      <label>Repetir <select id="ed-repetir"></select></label>
+      <div id="fila-intervalo" class="fila">
+        <label class="crece">Cada <input id="ed-intervalo" type="number" min="1" max="30" value="1"></label>
+        <span id="ed-unidad" class="tenue"></span>
+      </div>
+      <div id="fila-dias">
+        <div class="tenue mini">Días</div>
+        <div class="dias-semana" id="ed-dias"></div>
+      </div>
+      <div id="fila-fin" class="fila">
+        <label class="crece">Termina <select id="ed-fin-modo">
+          <option value="nunca">Para siempre</option>
+          <option value="fecha">Hasta la fecha</option>
+          <option value="conteo">Un número de veces</option>
+        </select></label>
+        <label id="lbl-hasta" class="crece">Fecha <input id="ed-hasta" type="date"></label>
+        <label id="lbl-conteo" class="crece">Veces <input id="ed-conteo" type="number" min="2" max="999" value="10"></label>
+      </div>
+      <div id="ed-resumen" class="tenue mini"></div>
+    </fieldset>
+    <p id="nota-solo-esta" class="tenue mini oculto">
+      Estás editando solo esta repetición, así que la regla de repetición no se puede cambiar aquí.
+    </p>
+
+    <label>Detalles <textarea id="ed-detalles" rows="2"></textarea></label>
+    <div class="acciones">
+      <button value="cancelar" class="tenue">Cancelar</button>
+      <button value="guardar" class="primario" id="btn-guardar-edicion">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-alcance">
+  <h3>Actividad que se repite</h3>
+  <p id="texto-alcance"></p>
+  <div class="acciones columna">
+    <button data-alcance="esta" id="btn-alcance-esta">Solo la de este día</button>
+    <button data-alcance="serie" class="primario">Todas las de la serie</button>
+    <button data-alcance="" class="tenue">Cancelar</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-menu">
+  <h3>Opciones</h3>
+  <div class="acciones columna">
+    <button id="op-tema">Cambiar a tema claro</button>
+    <button id="op-categoria">Nueva categoría…</button>
+    <button id="op-notificaciones">Activar recordatorios</button>
+    <div class="separador"></div>
+    <button id="op-exportar-ics">Exportar a .ics</button>
+    <button id="op-importar-ics">Importar desde .ics</button>
+    <button id="op-exportar-json">Guardar respaldo (.json)</button>
+    <button id="op-importar-json">Restaurar respaldo (.json)</button>
+    <div class="separador"></div>
+    <button id="op-instalar" class="primario oculto">Instalar en este dispositivo</button>
+    <button id="op-sync">Sincronización…</button>
+    <button value="cerrar" class="tenue" id="op-cerrar">Cerrar</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-sync">
+  <h3>Sincronización entre dispositivos</h3>
+  <div id="sync-cuerpo"></div>
+  <div class="acciones"><button id="sync-cerrar" class="tenue">Cerrar</button></div>
+</dialog>
+
+<input type="file" id="archivo-oculto" accept=".ics,.json" hidden>
+<div id="aviso" class="aviso oculto"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
