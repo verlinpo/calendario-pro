@@ -27,3 +27,11 @@ calendario.log
 # Salidas generadas
 gráficos guardados/
 *.png.tmp
+
+# Este repositorio es solo del calendario, pero la carpeta de PyCharm
+# tiene también los otros ejercicios (pokemon.py, graficos.py, quiz.py...).
+# Se ignoran los .py sueltos de la raíz para que `git status` muestre solo
+# lo que importa. Si algún día quieres versionar alguno, agrégalo a mano:
+#     git add -f nombre_del_archivo.py
+/*.py
+!/calendario.py
