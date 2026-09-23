@@ -1,6 +1,7 @@
 # Entorno virtual: son miles de archivos y se reinstala con pip.
-# (el de esta carpeta además apunta a un Python 3.8 que ya no existe)
-.venv/
+# (el .venv original apunta a un Python 3.8 que ya no existe; el bueno
+#  es .venv312, creado con Python 3.12)
+.venv*/
 venv/
 env/
 

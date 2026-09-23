@@ -1,0 +1,9 @@
+# Dependencias de la versión de escritorio (calendario.py).
+# Para recrear el entorno desde cero:
+#     python -m venv .venv312
+#     .venv312\Scripts\python.exe -m pip install -r requirements.txt
+
+PySide6>=6.5          # interfaz, audio y voz (QtTextToSpeech viene en Addons)
+keyring>=24.0         # guarda la clave de Azure cifrada en el sistema, no en texto plano
+
+# La versión web (calendario_web/) no necesita nada: es HTML y JavaScript.
